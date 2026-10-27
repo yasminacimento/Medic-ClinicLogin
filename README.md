@@ -1,108 +1,143 @@
-# Clínica Médica
+# 🏥 Medic-ClinicLogin
 
-Projeto Maven WAR com Java 11+, Jakarta EE 10, MySQL 8 e GlassFish, utilizado pelo NetBeans IDE 30.
+Aplicação web em **Java (Jakarta EE + MySQL)** que simula o sistema de uma clínica médica, com cadastro de pacientes, médicos, funcionários, consultórios, consultas, prontuários, exames e receitas. Conta com um sistema próprio de **cadastro de contas e login seguro**, com senhas protegidas por BCrypt, proteção CSRF e controle de sessão.
 
-## Execução e entrega
+> Projeto desenvolvido para a disciplina de Desenvolvimento Web — IFSULDEMINAS.
 
-1. Para uma instalação nova, execute o arquivo completo `sql/ClinicaMedica_Atualizado.sql` no MySQL 8 ou no HeidiSQL. Ele cria o banco `clinica_medica`, as 14 tabelas atuais, as chaves estrangeiras e a view de itens de receita.
-2. Esse é o único SQL necessário: inclui a estrutura da clínica e a tabela `usuario`, usada na autenticação e recuperação de senha. Contém somente a estrutura, sem cadastros, contas, senhas nem dados clínicos. O antigo script de autenticação foi incorporado e removido para evitar duplicidade.
-3. Confira a conexão local em `ConnectionFactory.java` e ajuste endereço, porta, usuário e senha do MySQL para a máquina de destino.
-4. Abra o projeto no NetBeans, compile e execute no GlassFish compatível com Jakarta EE 10.
-5. Acesse `http://localhost:8080/ClinicaMedica/`, clique em **Cadastrar usuário** e crie sua conta.
+---
 
-Nenhuma conta padrão ou senha inicial é incluída. SMTP, conta de Google, senha de aplicativo e arquivos de e-mail não são necessários.
-A máquina do professor precisa apenas do ambiente Java/GlassFish e do banco configurado.
+## ✨ Funcionalidades
 
-O SQL atualizado não contém comandos de exclusão e pode ser executado novamente sem apagar os dados.
-Como usa `CREATE TABLE IF NOT EXISTS`, ele não altera a estrutura de tabelas que já existam; sua finalidade é construir um banco novo.
-As tabelas são criadas na ordem dos relacionamentos, sem desativar a validação das chaves estrangeiras.
-Depois da criação, cadastre os dados básicos e uma consulta para poder emitir uma receita com medicamentos.
+**Cadastros da clínica**
+- Pacientes, médicos e funcionários
+- Consultórios, especialidades e convênios
+- Consultas e prontuários
+- Tipos de exame e solicitações de exame
+- Remédios e receitas (com vários medicamentos por receita)
 
-## Recuperação simplificada para aula
+**Contas e segurança**
+- Cadastro de usuário com validação e bloqueio de nome/e-mail duplicados
+- Login com senha protegida por **BCrypt** (salt aleatório, custo 12): o banco guarda só o hash, nunca a senha
+- **Filtro de autenticação**: as páginas da clínica só abrem com login
+- Proteção **CSRF** em todos os formulários de cadastro, login, recuperação e logout
+- Sessão renovada a cada login, cookie `HttpOnly` e expiração após 30 minutos sem uso
+- Recuperação de senha pelo e-mail cadastrado (versão simplificada para a aula, veja [Limitações](#️-limitações))
 
-Esta versão permite redefinir a senha diretamente com o e-mail cadastrado, por solicitação do autor do projeto.
-Não há envio de e-mail, link de recuperação ou token de recuperação.
+**Receitas em um único fluxo**
+- Monta a receita, adiciona e remove medicamentos e finaliza tudo de uma vez
+- Gravação em **transação JDBC**: se algum item falhar, o *rollback* desfaz tudo
 
-1. Na tela de login, clique em **Esqueci minha senha**.
-2. Informe o e-mail cadastrado, a nova senha e a confirmação.
-3. Clique em **Salvar nova senha**.
-4. Faça login com seu nome de usuário e a nova senha.
+**Interface**
+- Listagens com busca, ordenação e paginação
+- Formulários organizados por grupos e opção de mostrar/ocultar a senha
+- CSS e JavaScript locais, sem depender de CDN
 
-A nova senha continua sendo armazenada com BCrypt. Um endereço não cadastrado não cria usuário nem altera outras contas.
-A troca exige pelo menos 8 caracteres, no máximo 72 bytes UTF-8 e confirmação correspondente.
+---
 
-**Limitação intencional da demonstração:** qualquer pessoa que conheça um e-mail cadastrado pode redefinir sua senha.
-Esse fluxo não comprova a posse do e-mail e não deve ser utilizado em produção.
-A simplificação substitui os requisitos de envio de e-mail, validade e uso único de tokens previstos na atividade original.
+## 🛠️ Tecnologias
 
-Se a versão anterior já tiver criado a tabela `recuperacao_senha`, ela pode permanecer no banco: a aplicação atual não a utiliza.
-Não é necessário apagar tabelas para executar a atualização.
+| Camada | Tecnologia |
+|---|---|
+| Linguagem | Java 11+ |
+| Plataforma | Jakarta EE 10 (Servlets + JSP) |
+| Servidor | GlassFish |
+| Banco de dados | MySQL 8 (JDBC) |
+| Segurança | jBCrypt |
+| Testes | JUnit 5 + H2 em memória |
+| Build / IDE | Maven + NetBeans |
 
-## Receitas e medicamentos em um unico cadastro
+---
 
-O menu **Receitas** concentra o registro principal e seus itens. O antigo atalho de itens redireciona para esse fluxo.
+## 🚀 Como executar
 
-1. Selecione a consulta pelo paciente, médico e horário, informe a data e as observações e clique em **Continuar para medicamentos**.
-2. Escolha um medicamento do catálogo, informe dosagem e posologia e clique em **Adicionar à receita**. Repita para os outros medicamentos.
-3. Revise a lista e remova um item se precisar corrigi-lo. Os campos da consulta continuam editáveis.
-4. Clique em **Finalizar receita**. O sistema insere a receita, obtém o ID gerado e insere seus itens usando a mesma conexão JDBC.
-5. A transação só é confirmada quando todos os registros são gravados. Se qualquer item falhar, o rollback desfaz toda a operação.
+### Pré-requisitos
+- JDK 11 ou superior
+- MySQL 8
+- GlassFish compatível com Jakarta EE 10
+- NetBeans (ou Maven pela linha de comando)
 
-Antes da finalização, os dados ficam em um rascunho na sessão. **Cancelar edição** descarta esse rascunho sem criar uma receita vazia.
-Ao editar uma receita existente, o cancelamento mantém os dados já salvos; a confirmação atualiza o principal e seus itens juntos.
-A exclusão também pede confirmação e remove os itens e a receita na mesma transação.
-O cadastro não exige informar manualmente um ID de receita nem acessar uma tela separada para seus medicamentos.
-Cada receita aceita de 1 a 50 medicamentos, sem duplicidade, com dosagem e posologia preenchidas.
+### Passo a passo
 
-Para explicar ao professor, acompanhe `ReceitaControlador` (montagem do cadastro), `RascunhoReceita` (estado na sessão),
-`ReceitaService` (validação) e `ReceitaDao.salvarComItens` (principal, chave gerada, itens, commit e rollback).
-São utilizadas as tabelas `receita`, `item_receita` e o catálogo `remedio` do banco existente, sem mudança de esquema.
+1. **Clone o repositório**
+   ```bash
+   git clone https://github.com/yasminacimento/Medic-ClinicLogin.git
+   ```
 
-## Navegação e apresentação
+2. **Crie o banco de dados**
+   Execute o arquivo `sql/ClinicaMedica_Atualizado.sql` no MySQL (ou no HeidiSQL). Ele cria o banco `clinica_medica` com as 14 tabelas, as chaves estrangeiras e a view de itens de receita. O script só tem a estrutura, sem dados nem contas, e pode ser executado de novo sem apagar nada.
 
-O visual utiliza fundo claro, verde discreto, formulários alinhados e tabelas com ações consistentes.
-O menu agrupa atendimento e cadastros, com acesso direto a receitas. A página inicial permite buscar módulos.
-As listagens têm busca por texto, ordenação e paginação; tabelas extensas permitem rolagem em telas pequenas.
-Os formulários de autenticação permitem mostrar ou ocultar a senha. CSS e JavaScript são locais, sem dependência de CDN.
-O espaçamento segue uma escala compartilhada, com campos alinhados, ações ao final dos formulários e listas separadas dos cadastros.
-Pacientes, médicos e funcionários têm grupos próprios para dados pessoais/profissionais e contato.
-As grades ficam declaradas nas páginas JSP, de modo que a organização dos formulários funciona mesmo sem JavaScript.
-Os endereços de CSS e JavaScript incluem uma versão para evitar a reutilização de recursos antigos pelo navegador após esta atualização.
+3. **Configure a conexão**
+   Em `src/main/java/br/edu/ifsuldeminas/clinicamedica/modelo/dao/ConnectionFactory.java`, ajuste endereço, usuário e senha do seu MySQL:
+   ```java
+   private static final String DB_URL = "jdbc:mysql://localhost:3306/clinica_medica?useSSL=false";
+   private static final String DB_USER = "root";
+   private static final String DB_PASSWORD = "sua_senha";
+   ```
 
-## Como explicar a implementação
+4. **Rode a aplicação**
+   Abra o projeto no NetBeans e execute no GlassFish, ou gere o `.war` com:
+   ```bash
+   mvn package
+   ```
+   e faça o deploy de `target/ClinicaMedica-1.0-SNAPSHOT.war`.
 
-- **Senha:** `Seguranca` gera BCrypt com salt aleatório e custo 12. O banco armazena somente o hash de 60 caracteres; `checkpw` verifica a senha informada.
-- **Cadastro:** `LoginControlador` valida os campos e `UsuarioDAO` usa parâmetros JDBC. Nome e e-mail duplicados são rejeitados.
-- **Sessão:** um login válido invalida a sessão anterior e cria outra com `user` e `usuarioId`. A senha e seu hash não ficam na sessão. A sessão expira após 30 minutos de inatividade.
-- **Acesso:** `AuthFilter` verifica a sessão existente e o atributo `user` antes de liberar páginas e controladores da clínica.
-- **Logout:** um formulário POST chama `session.invalidate()` e redireciona ao login.
-- **Recuperação:** `RecuperacaoSenhaService` normaliza o e-mail, valida a senha e a confirmação, gera BCrypt e chama `UsuarioDAO.atualizarSenhaPorEmail`.
-- **Formulários:** cadastro, login, recuperação e logout usam POST com token CSRF. Esse token protege os formulários e não é um token de recuperação de senha.
-- **Respostas:** não são armazenadas em cache; o cookie de sessão é HttpOnly e o ID não é propagado na URL.
+5. **Acesse**
+   Abra `http://localhost:8080/ClinicaMedica/`, clique em **Cadastrar usuário** e crie sua conta. Não existe usuário ou senha padrão.
 
-A recuperação encerra a sessão do navegador que fez a troca. Outras sessões já abertas permanecem até logout ou timeout.
-Login, cadastro, recuperação e arquivos estáticos são públicos; os módulos da clínica exigem login.
+---
 
-## Verificação
+## 🧪 Testes
 
-O arquivo `sql/ClinicaMedica_Atualizado.sql` foi executado em um banco temporário no MySQL 8:
-foram conferidas 14 tabelas, 14 chaves estrangeiras e uma view. Uma segunda execução preservou um registro de teste.
-O banco temporário foi removido após a validação, sem modificar os dados da clínica.
+```bash
+mvn test
+```
 
-Execute `mvn test` para validar BCrypt, cadastro, duplicidade, filtro de acesso, recuperação direta por e-mail
-e a integridade da gravação de receitas e itens, incluindo rollback na criação e na edição.
-Os testes de dados usam H2 em memória no modo MySQL, sem alterar o banco da clínica.
-Use `mvn package` para gerar `target/ClinicaMedica-1.0-SNAPSHOT.war`.
+Os testes usam um banco H2 em memória (modo MySQL), então não mexem no banco da clínica. Eles verificam:
+- geração e verificação de senhas com BCrypt
+- o filtro de acesso (`AuthFilter`)
+- a recuperação de senha
+- a gravação de receitas com seus itens, incluindo o *rollback*
 
-Com GlassFish e MySQL ativos e a aplicação atualizada, execute
-`mvn -Dtest=AutenticacaoGlassFishIT test` para o teste completo por HTTP e JDBC.
-Ele cria uma conta aleatória, testa cadastro, login, logout, recuperação sem autenticação, validação de confirmação
-e rejeição da senha antiga, e remove apenas a conta que criou.
-Se a URL for diferente, informe `-Dclinica.it.url=...`.
+---
 
-Execute `mvn -Dtest=ReceitaGlassFishIT test` para conferir o processo completo de receitas no servidor e no MySQL:
-montagem, cancelamento, inclusão e remoção de medicamentos, finalização, edição, prevenção de duplicação e exclusão.
-Esse teste também verifica a abertura de todos os módulos e remove somente a conta e as receitas temporárias que criou.
+## 📁 Estrutura do projeto
 
-Para a demonstração manual, tente abrir uma página ou controlador da clínica sem login e confirme o redirecionamento.
-Cadastre, entre, navegue e saia. Depois redefina a senha pelo e-mail cadastrado e confirme que apenas a nova senha permite entrar.
+```
+├── sql/
+│   └── ClinicaMedica_Atualizado.sql    # script de criação do banco
+├── src/main/java/br/edu/ifsuldeminas/clinicamedica/
+│   ├── controlador/                    # servlets (Login, Paciente, Receita...)
+│   ├── modelo/
+│   │   ├── dao/                        # acesso ao banco (JDBC)
+│   │   └── entidade/                   # classes de domínio
+│   └── servico/                        # segurança, filtro de login e regras
+├── src/main/webapp/                    # páginas JSP, CSS e JavaScript
+├── src/test/java/                      # testes JUnit
+└── pom.xml
+```
+
+### Onde está cada parte da segurança
+
+| Arquivo | O que faz |
+|---|---|
+| `servico/Seguranca.java` | Gera e verifica o hash BCrypt das senhas |
+| `servico/AuthFilter.java` | Bloqueia as páginas da clínica para quem não fez login |
+| `controlador/LoginControlador.java` | Cadastro, login e logout |
+| `servico/RecuperacaoSenhaService.java` | Valida e salva a nova senha |
+| `modelo/dao/UsuarioDAO.java` | Consultas de usuário com parâmetros JDBC (evita SQL injection) |
+
+---
+
+## ⚠️ Limitações
+
+Este é um projeto acadêmico, então algumas partes foram simplificadas de propósito:
+
+- **Recuperação de senha:** basta informar um e-mail cadastrado e a nova senha. Não há envio de e-mail nem link de confirmação, então qualquer pessoa que saiba o e-mail de alguém pode trocar a senha dessa conta. **Não use esse fluxo em produção.**
+- **Credenciais do banco:** ficam escritas direto no `ConnectionFactory.java`. Em um sistema real, elas ficariam em variáveis de ambiente.
+
+---
+
+## 👥 Autores
+
+- **Aleckis** — [@aleckis](https://github.com/aleckis)
+- **Yasmin** — [@yasminacimento](https://github.com/yasminacimento)
