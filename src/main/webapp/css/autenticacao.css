@@ -1,0 +1,18 @@
+@import url("./estilo.css?v=20261026-2");
+body { justify-content: center; padding: 32px 16px; }
+body > main { width: 100%; max-width: 435px; margin: 24px auto; padding: 30px 32px; background: white; border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 4px 20px #22343d04; }
+body > main::before { content: "+"; display: grid; place-items: center; width: 39px; height: 39px; margin-bottom: 23px; border-radius: 11px; color: var(--brand); background: var(--soft); font-size: 29px; }
+h1 { font-size: 1.65rem; margin-bottom: 8px; }
+h2 { font-size: 1rem; color: var(--muted); font-weight: 400; margin-bottom: 24px; }
+main > p { font-size: 13px; color: var(--muted); }
+label { display: block; margin: 18px 0 7px; }
+input { width: 100%; }
+form > button[type=submit] { width: 100%; padding: 11px 16px; border: 0; border-radius: 7px; background: var(--brand); color: white; font-weight: 600; margin: 23px 0 7px; }
+form > button[type=submit]:hover { background: var(--brand-dark); }
+form + p { margin-top: 20px; }
+small { display: block; margin-top: 6px; font-size: 12px; }
+[role=alert], [role=status] { padding: 12px 14px; background: #f0f5f5; border: 1px solid var(--line); border-radius: 8px; font-size: 13px; overflow-wrap: anywhere; margin-top: 20px; }
+.password-field { display: flex; position: relative; }
+.password-field input { padding-right: 78px; }
+.password-toggle { position: absolute; right: 9px; top: 50%; transform: translateY(-50%); border: 0; color: var(--muted); background: transparent; padding: 5px; font-size: 11px; }
+@media (max-width: 480px) { body > main { padding: 25px 24px; margin: 8px auto; } }
